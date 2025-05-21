@@ -38,6 +38,27 @@ def get_base_selection(channel, corr=""):
     return base_selection
 
 
+def update_selection(base_selection, isos=False, zpt=False):
+    """
+    Cover special cases, where the base selections are not
+    fully applied.
+    """
+    new_selection = {}
+
+    if isos:
+        # non isoated W region
+        base_selection["iso"] = ""
+        for n in range(len(isos)-1):
+            new_selection[f'Iso{n}'] = f'(iso_1 > {isos[n]} && iso_1 < {isos[n+1]})'
+
+    elif zpt:
+        # zpt binning
+        # TODO: update this section
+        new_selection = {}
+
+    return base_selection, new_selection
+
+
 def get_process_selection(channel):
     """
     Get the process selection for the analysis.
@@ -115,6 +136,5 @@ def get_process_selection(channel):
             f"Unknown channel: {channel}. "\
             "Supported channels are 'mm' and 'mmet'."
         )
-
 
     return process_selection

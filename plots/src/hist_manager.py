@@ -2,7 +2,7 @@ import ROOT
 from glob import glob
 
 
-class HistManager:
+class ProcessManager:
     """
     Class to manage different process classes.
     I.e., steer the class
