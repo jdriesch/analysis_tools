@@ -1,0 +1,1 @@
+inpath = '/ceph/jdriesch/CROWN_samples/test/ntuples/2022/*/*/*.root'

@@ -1,0 +1,3 @@
+definitions = {
+    "weight": "1"
+}
