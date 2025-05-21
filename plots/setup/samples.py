@@ -1,48 +1,50 @@
+sample_tmpl = '{}_TuneCP5_13p6TeV_{}-pythia8_Run3Summer22NanoAODv12-130X'
+
 samples = {
     "DY": [
-        "DYto2L-2Jets_MLL-10to50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8_Run3Summer22NanoAODv12-130X",
-        "DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8_Run3Summer22NanoAODv12-130X",
+        sample_tmpl.format("DYto2L-2Jets_MLL-10to50", "amcatnloFXFX"),
+        sample_tmpl.format("DYto2L-2Jets_MLL-50", "amcatnloFXFX"),
     ],
     "W": [
-        "WtoLNu-2Jets_TuneCP5_13p6TeV_amcatnloFXFX-pythia8_Run3Summer22NanoAODv12-130X",
+        sample_tmpl.format("WtoLNu-2Jets", "amcatnloFXFX"),
     ],
     "TT": [
-        "TT_TuneCP5_13p6TeV_powheg-pythia8_Run3Summer22NanoAODv12-130X",
+        sample_tmpl.format("TT", "powheg"),
     ],
     "ST": [
-        "TbarBQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8_Run3Summer22NanoAODv12-130X",
-        "TbarWplus_DR_AtLeastOneLepton_TuneCP5_13p6TeV_powheg-pythia8_Run3Summer22NanoAODv12-130X",
-        "TBbarQ_t-channel_4FS_TuneCP5_13p6TeV_powheg-madspin-pythia8_Run3Summer22NanoAODv12-130X",
-        "TWminus_DR_AtLeastOneLepton_TuneCP5_13p6TeV_powheg-pythia8_Run3Summer22NanoAODv12-130X",
+        sample_tmpl.format("TbarBQ_t-channel_4FS", "powheg-madspin"),
+        sample_tmpl.format("TbarWplus_DR_AtLeastOneLepton", "powheg"),
+        sample_tmpl.format("TBbarQ_t-channel_4FS", "powheg-madspin"),
+        sample_tmpl.format("TWminus_DR_AtLeastOneLepton", "powheg"),
     ],
     "VV": [
-        "WWto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8_Run3Summer22NanoAODv12-130X",
-        "WWtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8_Run3Summer22NanoAODv12-130X",
-        "WZto2L2Q_TuneCP5_13p6TeV_powheg-pythia8_Run3Summer22NanoAODv12-130X_ext1",
-        "WZto3LNu_TuneCP5_13p6TeV_powheg-pythia8_Run3Summer22NanoAODv12-130X",
-        "WZtoLNu2Q_TuneCP5_13p6TeV_powheg-pythia8_Run3Summer22NanoAODv12-130X",
-        "ZZto2L2Nu_TuneCP5_13p6TeV_powheg-pythia8_Run3Summer22NanoAODv12-130X",
-        "ZZto2L2Q_TuneCP5_13p6TeV_powheg-pythia8_Run3Summer22NanoAODv12-130X",
-        "ZZto2Nu2Q_TuneCP5_13p6TeV_powheg-pythia8_Run3Summer22NanoAODv12-130X",
-        "ZZto4L_TuneCP5_13p6TeV_powheg-pythia8_Run3Summer22NanoAODv12-130X",
+        sample_tmpl.format("WWto2L2Nu", "powheg"),
+        sample_tmpl.format("WWtoLNu2Q", "powheg"),
+        sample_tmpl.format("WZto2L2Q", "powheg"),
+        sample_tmpl.format("WZto3LNu", "powheg"),
+        sample_tmpl.format("WZtoLNu2Q", "powheg"),
+        sample_tmpl.format("ZZto2L2Nu", "powheg"),
+        sample_tmpl.format("ZZto2L2Q", "powheg"),
+        sample_tmpl.format("ZZto2Nu2Q", "powheg"),
+        sample_tmpl.format("ZZto4L", "powheg"),
     ],
     "VBF": [
-        "VBFto2L_MLL-50_TuneCP5_13p6TeV_madgraph-pythia8_Run3Summer22NanoAODv12-130X",
-        "VBFtoLNu_TuneCP5_13p6TeV_madgraph-pythia8_Run3Summer22NanoAODv12-130X",
+        sample_tmpl.format("VBFto2L_MLL-50", "madgraph"),
+        sample_tmpl.format("VBFtoLNu", "madgraph"),
     ],
     "DYtau": [
-        "DYto2L-2Jets_MLL-10to50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8_Run3Summer22NanoAODv12-130X",
-        "DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8_Run3Summer22NanoAODv12-130X",
+        sample_tmpl.format("DYto2L-2Jets_MLL-10to50", "amcatnloFXFX"),
+        sample_tmpl.format("DYto2L-2Jets_MLL-50", "amcatnloFXFX"),
     ],
     "Wtau": [
-        "WtoLNu-2Jets_TuneCP5_13p6TeV_amcatnloFXFX-pythia8_Run3Summer22NanoAODv12-130X",
+        sample_tmpl.format("WtoLNu-2Jets", "amcatnloFXFX"),
     ],
     "Wnonfid": [
-        "WtoLNu-2Jets_TuneCP5_13p6TeV_amcatnloFXFX-pythia8_Run3Summer22NanoAODv12-130X",
+        sample_tmpl.format("WtoLNu-2Jets", "amcatnloFXFX"),
     ],
     "DYnonfid": [
-        "DYto2L-2Jets_MLL-10to50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8_Run3Summer22NanoAODv12-130X",
-        "DYto2L-2Jets_MLL-50_TuneCP5_13p6TeV_amcatnloFXFX-pythia8_Run3Summer22NanoAODv12-130X",
+        sample_tmpl.format("DYto2L-2Jets_MLL-10to50", "amcatnloFXFX"),
+        sample_tmpl.format("DYto2L-2Jets_MLL-50", "amcatnloFXFX"),
     ],
     "Data": [
         "SingleMuon_Run2022C-22Sep2023-v1",
