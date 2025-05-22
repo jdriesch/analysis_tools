@@ -9,9 +9,9 @@ def get_base_selection(channel, corr=""):
         iso = "(iso_1 < 0.15 && iso_2 < 0.15)"
         trg = "(trg_single_mu24_1 || trg_single_mu24_2)"
         add = (
-            f"(q_1*q_2 < 0)"
+            f"(q_1*q_2 < 0) &&"
             f"(m_vis{corr} > 60. && m_vis{corr} < 120.)"
-            "(pog_puweight < 100)"
+            # "(pog_puweight < 100)"
         )
 
     elif channel=='mmet':
