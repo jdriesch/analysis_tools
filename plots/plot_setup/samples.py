@@ -1,6 +1,6 @@
 def get_samples(channel):
 
-    basepath = '/ceph/jdriesch/CROWN_samples/test/ntuples/2022/'
+    basepath = '/ceph/jdriesch/CROWN_samples/RerecoRun3_Nanov12_04/ntuples/2022/'
 
     sample_tmpl = '{}_TuneCP5_13p6TeV_{}-pythia8_Run3Summer22NanoAODv12-130X'
 
