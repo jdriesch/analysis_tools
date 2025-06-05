@@ -1,6 +1,9 @@
 import ROOT
 from glob import glob
 import sys
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class HistMaker:
@@ -10,20 +13,23 @@ class HistMaker:
     """
 
     def __init__(
-        self, files, friends = [], 
+        self, files, cat, proc, friends = [], 
         definitions={}, 
         base_selection={}, process_selection={}, add_selection={},
+        weights={},
         nthreads=1
     ):
         """
         Initialize the histogram class.
         """
 
-        self.files = files
+        self.files = files[proc]
+        self.category = cat
+        self.process = proc
         self.friends = friends
-        self.definitions = definitions
+        self.weights = weights
         self.base_selection = base_selection
-        self.process_selection = process_selection
+        self.process_selection = process_selection[cat][proc]
         self.add_selection = add_selection
         self.histograms = []
 
@@ -51,6 +57,12 @@ class HistMaker:
         for friend in self.friends:
             ch_friends[friend] = ROOT.TChain('ntuple')
 
+        logger.debug(
+            f"Loading files for {self.process} with"
+            f" files {self.files}"
+            f" and friends {self.friends}"
+        )
+
         # add files to corresponding friend chains
         for file in self.files:
             chain.Add(file)
@@ -72,11 +84,13 @@ class HistMaker:
         Create a dataframe from the ROOT TChain.
         """
         # create rdf without selections
+        logger.debug('Creating RDataFrame for %s', self.process)
         rdf = ROOT.RDataFrame(self.chain)
 
         # defining variables necessary for filtering/plotting
-        for var, expr in self.definitions.items():
-            rdf = rdf.Define(var, expr)
+        for var, expr in self.weights.items():
+            logger.debug(f"Defining {var} with {expr}")
+            rdf = rdf.Define(var+'_weight', expr)
 
         # perform baseselection for the corresponding signal region
         for sel, expr in self.base_selection.items():
@@ -84,9 +98,15 @@ class HistMaker:
         
         # perform process selection for corresponding process
         for filter in self.process_selection:
+            logger.debug(f"Filtering {filter}")
             rdf = rdf.Filter(filter)
 
         self.rdf = rdf
+
+        logger.debug(
+            f"Created dataframe for {self.process} with"
+            f" entries: {rdf.Count().GetValue()}"
+        )
 
         return
     
@@ -99,25 +119,37 @@ class HistMaker:
 
         rdf = self.rdf
 
+        vars = rdf.GetColumnNames()
+
         # final selections that are histogram-specific
         for sel, expr in self.add_selection.items():
             rdf = rdf.Filter(expr)
 
         # create the cpp objects for the histograms
-        for hist in hists:
-            self.histograms.append(
-                rdf.Histo1D(
-                    (
-                        hist['name'],
-                        hist['title'],
-                        hist['bins'],
-                        hist['xmin'],
-                        hist['xmax']
-                    ),
-                    hist['var'],
-                    hist['weight']
+        for var in hists:
+            for weight in self.weights:
+                hist = hists[var]
+
+                if weight+'_weight' not in vars or var not in vars:
+                    logger.warning(
+                        f"Variable {var} or weight {weight}_weight not found"
+                        f" in dataframe for {self.process}"
+                    )
+                    continue
+
+                self.histograms.append(
+                    rdf.Histo1D(
+                        (
+                            self.process + var + weight,
+                            '',
+                            hist['bins'][0],
+                            hist['bins'][1],
+                            hist['bins'][2]
+                        ),
+                        var,
+                        weight+'_weight'
+                    )
                 )
-            )
         
         return
     
@@ -126,10 +158,14 @@ class HistMaker:
         """
         Save the histograms to a ROOT file.
         """
-
+        logger.debug(f"Saving histograms to {outpath} with option {option}")
         tf = ROOT.TFile(outpath, option)
+
         for hist in self.histograms:
+            hist.SetDirectory(ROOT.nullptr)
+            tf.cd()
             hist.Write()
+
         tf.Close()
         self.histograms = []
         return
@@ -137,8 +173,21 @@ class HistMaker:
 
 if __name__=='__main__':
     # for batch submission or local usage
-    args = sys.argv[]
-    init_args = args[1:-2]
-    proc = ProcessManager(*init_args)
-    proc.make_hists(args[-2])
-    proc.save_hists(args[-1])
+    args = sys.argv
+    print(args)
+    files = args[1:-2]
+    proc = HistMaker(files, args[-2])
+
+    histo = {
+        'm_vis': {
+            'xtitle': 'p_{T} (GeV)',
+            'ytitle': 'Events',
+            'bins': [60, 60, 120],
+            'weight': 'genweight'
+        },
+    }
+    proc.make_hists(histo)
+
+    root_file = args[-1]+'.root'
+    print('Saving histograms to', root_file)
+    proc.save_hists(root_file)

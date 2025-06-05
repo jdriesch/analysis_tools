@@ -1,6 +1,18 @@
 import ROOT
 from glob import glob
 
+from src.hist_process import HistMaker
+from plot_setup.variations import get_weights
+
+
+import logging
+
+# make all plots of different variations
+# type 1: update the weight
+# type 2: update the observable
+
+logger = logging.getLogger(__name__)
+
 
 class ProcessManager:
     """
@@ -10,7 +22,10 @@ class ProcessManager:
 
     def __init__(
         self, files, friends = [], 
-        definitions={}, filters=[], nthreads=1
+        definitions={}, filters={},
+        binnings={}, save_path='',
+        categories=[],
+        nthreads=1
     ):
         """
         Initialize the histogram class.
@@ -19,8 +34,13 @@ class ProcessManager:
         self.files = files
         self.friends = friends
         self.definitions = definitions
-        self.filters = filters
+        self.base_selection = filters['base']
+        self.process_selection = filters['process']
+        self.add_selection = filters['add']
+        self.hists = binnings
         self.histograms = []
+        self.categories = categories
+        self.save_path = save_path
 
         if nthreads > 1:
             ROOT.EnableImplicitMT(nthreads)
@@ -30,89 +50,50 @@ class ProcessManager:
                 self.samples = glob(proc)
             else:
                 self.files = proc
-        self.load_chain()
-        self.create_df()
-
-        return
-
-
-    def load_chain(self):
-        """
-        Load the dataframe from the ROOT file.
-        """
-        chain = ROOT.TChain('ntuple')
-        ch_friends = {}
-        for friend in self.friends:
-            ch_friends[friend] = ROOT.TChain('ntuple')
-
-        for file in self.files:
-            chain.Add(file)
-            for friend in self.friends:
-                f_friend = file.replace("ntuples", f"friends/{friend}")
-                ch_friends[friend].Add(f_friend)
-        
-        for friend in self.friends:
-            chain.AddFriend(ch_friends[friend])
-        
-        self.chain = chain
-        
-        return
-
-
-    def create_df(self):
-        """
-        Create a dataframe from the ROOT TChain.
-        """
-
-        rdf = ROOT.RDataFrame(self.chain)
-
-        for var, expr in self.definitions.items():
-            rdf = rdf.Define(var, expr)
-
-        for filter in self.filters:
-            rdf = rdf.Filter(filter)
-        
-        self.rdf = rdf
 
         return
     
 
-    def make_hists(self, hists):
+    def run_local(self):
         """
-        Create histograms from the dataframe.
-        hists = {}
+        Collect all histograms and then save them to commong file.
         """
+        save_opt = 'recreate'
+        for i, cat in enumerate(self.categories):
+            for proc in self.process_selection[cat]:
+                weights = get_weights(proc)
+                logger.info(f"Processing {proc} with {self.files[proc]}")
 
-        for hist in hists:
-            rdf = self.rdf
-            for filter in hist['filters']:
-                rdf = rdf.Filter(filter)
-
-            self.histograms.append(
-                rdf.Histo1D(
-                    (
-                        hist['name'],
-                        hist['title'],
-                        hist['bins'],
-                        hist['xmin'],
-                        hist['xmax']
-                    ),
-                    hist['var'],
-                    hist['weight']
+                # create the histogram class
+                hist = HistMaker(
+                    self.files, cat, proc, self.friends,
+                    self.definitions, self.base_selection,
+                    self.process_selection, self.add_selection,
+                    weights,
+                    nthreads=12
                 )
-            )
-        
-        return
-    
+                # run the histogram creation
+                hist.make_hists(self.hists)
+                hist.save_hists(
+                    self.save_path, save_opt
+                )
 
-    def save_hists(self, outpath, option="RECREATE"):
-        """
-        Save the histograms to a ROOT file.
-        """
+                save_opt = 'update'
 
-        tf = ROOT.TFile(outpath, option)
-        for hist in self.histograms:
-            hist.Write()
-        tf.Close()
-        self.histograms = []
-        return
+
+
+    def run_batch(self):
+        """
+        Create the histograms in batch mode.
+        """
+        pass
+
+
+    def run(self, local=True):
+        """
+        Run the histogram creation process.
+        """
+        if local:
+            self.run_local()
+        else:
+            self.run_batch()
