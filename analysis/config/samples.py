@@ -18,7 +18,10 @@ def get_samples(region):
             tmpl.format("DYto2L-2Jets_MLL-10to50", "amcatnloFXFX"),
             tmpl.format("DYto2L-2Jets_MLL-50", "amcatnloFXFX"),
         ],
-        "W": [
+        "Wp": [
+            tmpl.format("WtoLNu-2Jets", "amcatnloFXFX"),
+        ],
+        "Wm": [
             tmpl.format("WtoLNu-2Jets", "amcatnloFXFX"),
         ],
         "TT": [
