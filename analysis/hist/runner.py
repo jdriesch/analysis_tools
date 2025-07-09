@@ -43,7 +43,7 @@ def run_production(args):
             if args.local:
                 process_manager.run_local()
             else:
-                process_manager.run_batch()
+                process_manager.run_batch(args.log)
 
 # TODO: remove dependencies (friends, paths,...)
 

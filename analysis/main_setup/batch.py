@@ -10,7 +10,7 @@ def create_job_script(job_script, input_file, job_dir):
         f.write(f"python hist_process.py {input_file} $1")
 
 
-def create_submit_script(submit_script, job_script, n_processes):
+def create_submit_script(dolog, submit_script, job_script, n_processes):
     import os
 
     log_dir = os.path.dirname(submit_script)+ '/logs'
@@ -21,9 +21,14 @@ def create_submit_script(submit_script, job_script, n_processes):
         f.write('arguments = $(Process)\n')
         f.write('\n')
         f.write('# Output/Error/Log files\n')
-        f.write(f'Output = {log_dir}/job_$(Cluster)_$(Process).out\n')
-        f.write(f'Error  = {log_dir}/job_$(Cluster)_$(Process).err\n')
-        f.write(f'Log    = {log_dir}/job_$(Cluster)_$(Process).log\n')
+        if dolog:
+            f.write(f'Output = {log_dir}/job_$(Cluster)_$(Process).out\n')
+            f.write(f'Error  = {log_dir}/job_$(Cluster)_$(Process).err\n')
+            f.write(f'Log    = {log_dir}/job_$(Cluster)_$(Process).log\n')
+        else:
+            f.write(f'Output = /dev/null\n')
+            f.write(f'Error  = /dev/null\n')
+            f.write(f'Log    = /dev/null\n')
         f.write('\n')
         f.write('# job requirements\n')
         f.write('+RequestWalltime = 3600*2\n')

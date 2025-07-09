@@ -64,7 +64,7 @@ class ProcessManager:
         raise NotImplementedError("This function is not yet implemented.")
 
 
-    def run_batch(self):
+    def run_batch(self, dolog):
         """
         Create the histograms in batch mode.
         For this: make one file containing all options
@@ -114,7 +114,7 @@ class ProcessManager:
         job_script_abs = os.path.abspath(job_script)
 
         create_job_script(job_script, options_file_abs, job_dir)
-        create_submit_script(submit_script, job_script_abs, n_processes)
+        create_submit_script(dolog, submit_script, job_script_abs, n_processes)
 
         # make sure the scripts are executable
         os.chmod(job_script, 0o755)

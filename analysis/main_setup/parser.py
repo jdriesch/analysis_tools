@@ -76,6 +76,12 @@ def parse_args():
         default=False,
         help="run in debug mode"
     )
+    parser.add_argument(
+        '--log',
+        action='store_true',
+        defaule=False,
+        help='enable logging to file.'
+    )
     
 
     args = parser.parse_args()

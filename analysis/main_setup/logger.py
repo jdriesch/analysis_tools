@@ -1,6 +1,6 @@
 import logging
 
-def setup(log_file='main.log', debug=False):
+def setup(log_file=False, debug=False):
     # Configure basic logging settings
 
     if debug:
@@ -8,14 +8,17 @@ def setup(log_file='main.log', debug=False):
     else:
         log_level = logging.INFO
 
+    handlers = [logging.StreamHandler()] # log to console
+
+    if log_file:
+        logfile = 'main.log'
+        handlers.append(logging.FileHandler(logfile))  # log to file
+
     logging.basicConfig(
         level=log_level, 
         format='%(asctime)s - %(levelname)s - %(message)s',
-        handlers=[
-            logging.FileHandler(log_file),  # Log to a file
-            logging.StreamHandler()  # Also log to console
-        ]
+        handlers=handlers
     )
 
-    logger = logging.getLogger(__name__.split('.')[0]) # Get the top-level logger for this package
+    logger = logging.getLogger(__name__.split('.')[0]) # Get top-level logger
     return logger
