@@ -5,3 +5,5 @@
 **.log
 **.yaml
 **.txt
+**/output/**
+**_stderror
