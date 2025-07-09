@@ -36,24 +36,23 @@ def run_production(args):
                 selection=variation,
                 binnings=histograms,
                 friends=['sf', 'xy', 'pu', 'ptweight', 'xsec', 'xy', 'lepton', 'met_punom'],
-                save_path='output/root/test.root',
                 nthreads=1
             )
 
             if args.local:
                 process_manager.run_local()
             else:
-                process_manager.run_batch(args.log)
+                process_manager.run_batch(args.version, args.log)
 
 # TODO: remove dependencies (friends, paths,...)
 
 
-def run_qcd():
+def run_qcd(version):
 
     for region in ['Wp', 'Wm']:
         save_option = 'recreate'
 
         for mcscale in [0.9, 1, 1.1]:
-            save_dir = f'output/batch_jobs/{region}/Nominal/QCD{region}_QCD{region}.root'
+            save_dir = f'output/{version}/batch_jobs/{region}/Nominal/QCD{region}_QCD{region}.root'
             extrapolate_all(region, mcscale, save_dir, save_option)
             save_option = 'update'

@@ -43,7 +43,6 @@ class ProcessManager:
         self.hists = binnings
         self.selection = selection
         self.histograms = []
-        self.save_path = save_path
 
         self.nthreads = nthreads
 
@@ -64,13 +63,13 @@ class ProcessManager:
         raise NotImplementedError("This function is not yet implemented.")
 
 
-    def run_batch(self, dolog):
+    def run_batch(self, version, dolog):
         """
         Create the histograms in batch mode.
         For this: make one file containing all options
         """
 
-        batch_dir = f'output/batch_jobs/{self.region}/{self.selection}'
+        batch_dir = f'output/{version}/batch_jobs/{self.region}/{self.selection}'
         os.makedirs(batch_dir, exist_ok=True)
         batch_dir_abs = os.path.abspath(batch_dir)
         logger.info(f"Batch directory: {batch_dir_abs}")

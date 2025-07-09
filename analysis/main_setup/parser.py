@@ -1,4 +1,6 @@
 from argparse import ArgumentParser, RawTextHelpFormatter
+import os
+import subprocess
 
 
 def parse_args():
@@ -79,10 +81,79 @@ def parse_args():
     parser.add_argument(
         '--log',
         action='store_true',
-        defaule=False,
+        default=False,
         help='enable logging to file.'
+    )
+    parser.add_argument(
+        '-V',
+        '--version',
+        type=str,
+        default='v1',
+        help="version number of output files."
+    )
+    parser.add_argument(
+        '--overwrite',
+        action='store_true',
+        default=False,
+        help="overwrite existing output directory"
     )
     
 
     args = parser.parse_args()
+
+    args = check_arguments(args)
+
+    return args
+
+
+def check_arguments(args):
+
+    # version
+    if os.path.exists(f'output/{args.version}/') and not args.overwrite:
+        overwrite = input(
+            f"Output directory {args.version} already exists. "
+            "Potentially overwrite? (y/n): "
+        ).strip().lower()
+
+        if overwrite != 'y':
+            raise ValueError(
+                f"Output directory {args.version} already exists. Please "
+                "choose a different version or remove the existing directory."
+            )
+        else:
+            print(f"Potentially overwriting output directory {args.version}.")
+
+    # check for uncommitted changes
+    status = subprocess.run(
+        ['git', 'status', '--porcelain'],
+        capture_output=True, text=True, check=True
+    )
+
+    if status.stdout.strip():
+        proceed = input(
+            "There are uncommitted changes in the repository. "
+            "Proceed? (y/n): "
+        ).strip().lower()
+
+        if proceed != 'y':
+            raise ValueError(
+                "Uncommitted changes found. Please commit or stash your changes "
+                "before proceeding."
+            )
+
+        else:
+            print("Proceeding with uncommitted changes. Adding 'test' to version.")
+            args.version += '_test'
+
+    # add information text file with current commit
+    commit = subprocess.run(
+        ['git', 'rev-parse', 'HEAD'],
+        capture_output=True, text=True, check=True
+    )
+    commit_hash = commit.stdout.strip()
+    with open(f'output/{args.version}/info.txt', 'w') as f:
+        f.write(f"Commit hash: {commit_hash}\n")
+        f.write(f"Version: {args.version}\n")
+        f.write("This file contains the commit hash and version used for this analysis.\n")
+
     return args

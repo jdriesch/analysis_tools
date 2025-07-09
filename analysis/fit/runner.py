@@ -10,18 +10,18 @@ from .prepare import PrepareFit
 
 logger = logging.getLogger(__name__)
 
-def collect_histograms():
+def collect_histograms(version):
     """
     Collect all relevant histograms and save them to common file.
     """
 
-    path_tosave = 'output/root/'
+    path_tosave = f'output/{version}/root/'
     
     for region in ['Wp', 'Wm', 'Z']:
         all_hists = {}
         
         # load config parameters
-        hist_locations = cfg.variations.get_histogram_locations(region)
+        hist_locations = cfg.variations.get_histogram_locations(version, region)
         nuisances = cfg.variations.get_variations(region)
         variables = cfg.binnings.get_histograms(region)
 
@@ -53,10 +53,11 @@ def make_datacard():
         variations = cfg.variations.get_variations(region)
         fit_variable = list(cfg.binnings.get_histograms(region, 'Nominal').keys())[0]
 
-        card_path = f'output/cards/{region}.txt'
-        os.makedirs('output/cards/', exist_ok=True)
+        card_path = f'output/{version}/cards/'
+        os.makedirs(card_path, exist_ok=True)
+        card_path += f'{region}.txt'
 
-        base_path = '/work/jdriesch/earlyrun3/analysis/analysis_tools/analysis/output/'
+        base_path = f'/work/jdriesch/earlyrun3/analysis/analysis_tools/analysis/output/{version}' # TODO: remove absolute path
     
         hist_path = base_path + f'root/{region}.root'
 

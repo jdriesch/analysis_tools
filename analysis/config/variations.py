@@ -73,12 +73,12 @@ def get_variations(region):
     return variations.provide()
 
 
-def get_histogram_locations(region):
+def get_histogram_locations(version, region):
     """
     locations from output files from histogramming process.
     """
 
-    basepath = f"output/batch_jobs/{region}/"
+    basepath = f"output/{version}/batch_jobs/{region}/"
 
     locations = [
         basepath+'Nominal/*.root',
