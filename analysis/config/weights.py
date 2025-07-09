@@ -1,19 +1,26 @@
-
-
-def get_weights(proc):
-
+def get_weights(proc, variation=''):
+    """
+    Get the weights only if the postfix is empty.
+    """
     if proc == 'Data':
         return {'Nominal': '1.0'}
 
     baseweight = 'genweight*sumwWeight*crossSectionPerEventWeight'
     evtweight = '*pog_puweight*ptweight*5010'
-    sfweight = '*sf_trk*sf_sta*sf_id*sf_iso*sf_trg*sf_prefire'
+
+    if 'iso' in variation:
+        sfweight = '*sf_trk*sf_sta*sf_id*sf_highiso_iso*sf_highiso_trg*sf_prefire'
+    else:
+        sfweight = '*sf_trk*sf_sta*sf_id*sf_iso*sf_trg*sf_prefire'
 
     nominal = baseweight+evtweight+sfweight
 
     weight_variations = {
         'Nominal': nominal
     }
+
+    if variation != 'Nominal':
+        return weight_variations
 
     # variations of efficiency scale factors
     for var in sfweight.split('*')[1:]:
@@ -30,7 +37,8 @@ def get_weights(proc):
     
     # variations of pdfs
     for i in range(1, 101):
-        weight_variations[f'LHEPdfWeight{i}'] = nominal+f'*LHEPdfWeight{i}'
+        weight_variations[f'LHEPdfWeight{i}Up'] = nominal+f'*LHEPdfWeight{i}'
+        weight_variations[f'LHEPdfWeight{i}Down'] = nominal+f'*(2.-LHEPdfWeight{i})'
 
     # variations of scales
     weight_variations['LHEPdfWeightAlphaSUp'] = nominal+'*LHEPdfWeight102'

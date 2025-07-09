@@ -1,6 +1,10 @@
 import ROOT
 
 ROOT.gROOT.SetBatch(True)
+ROOT.gStyle.SetOptStat(0)
+ROOT.gStyle.SetPadTickX(1)
+ROOT.gStyle.SetPadTickY(1)
+
 
 class PlotDistro:
     def __init__(self, loadpath, savepath, options):
@@ -131,16 +135,16 @@ class PlotDistro:
             self.main_pad = ROOT.TPad("main_pad", "main_pad", 0, 0.35, 1, 1)
             self.main_pad.Draw()
             self.main_pad.SetBottomMargin(0.025)
-            self.main_pad.SetRightMargin(0.03)
-            self.main_pad.SetLeftMargin(0.12)
+            self.main_pad.SetRightMargin(0.05)
+            self.main_pad.SetLeftMargin(0.15)
 
             # ratio pad
             self.ratio_pad = ROOT.TPad("ratio_pad", "ratio_pad", 0, 0, 1, 0.35)
             self.ratio_pad.Draw()
             self.ratio_pad.SetTopMargin(0.05)
             self.ratio_pad.SetBottomMargin(0.35)
-            self.ratio_pad.SetRightMargin(0.03)
-            self.ratio_pad.SetLeftMargin(0.12)
+            self.ratio_pad.SetRightMargin(0.05)
+            self.ratio_pad.SetLeftMargin(0.15)
 
             self.main_pad.cd()
 
@@ -320,13 +324,9 @@ class PlotDistro:
             self.textbox.DrawLatex(textbox['textbox'][0], textbox['textbox'][1]-i*0.07, text)
 
 
-    def draw_canvas(self):
+    def draw_canvas(self, w=800, h=700):
         # Create a canvas
-        self.canvas = ROOT.TCanvas("canvas", "canvas", 800, 800)
-        self.canvas.SetTopMargin(0.05)
-        self.canvas.SetBottomMargin(0.15)
-        self.canvas.SetRightMargin(0.03)
-        self.canvas.SetLeftMargin(0.12)
+        self.canvas = ROOT.TCanvas("canvas", "canvas", w, h)
 
         self.setup_pad()
 
@@ -385,7 +385,7 @@ if __name__ == "__main__":
                 'draw_opt': 'hist'
             }
         },  
-        'name': 'm_visNominal',
+        'name': 'm_vis_corrNominal',
         'xtitle': 'm_{vis} (GeV)',
         'ratiorange': [0.9, 1.1],
         'draw_order': ['Sim', 'Data']

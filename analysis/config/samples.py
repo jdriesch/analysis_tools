@@ -1,11 +1,17 @@
-def get_samples(channel):
+def get_samples(region):
+
+    if region=='Z':
+        channel = 'mm'
+    elif region=='Wp' or region=='Wm':
+        channel = 'mmet'
+
 
     basepath = '/ceph/jdriesch/CROWN_samples/RerecoRun3_Nanov12_04/ntuples/2022/'
 
     sample_tmpl = '{}_TuneCP5_13p6TeV_{}-pythia8_Run3Summer22NanoAODv12-130X'
 
     tmpl = basepath + sample_tmpl + '/' + channel + '/*.root'
-    print(tmpl)
+    # print(tmpl)
 
     samples = {
         "DY": [

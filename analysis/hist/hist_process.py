@@ -2,7 +2,16 @@ import ROOT
 from glob import glob
 import sys
 import logging
+import json
 
+
+logging.basicConfig(
+    level=logging.DEBUG, 
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler()  # log to console
+    ]
+)
 logger = logging.getLogger(__name__)
 
 
@@ -15,7 +24,7 @@ class HistMaker:
     def __init__(
         self, files, cat, proc, friends = [], 
         definitions={}, 
-        base_selection={}, process_selection={}, add_selection={},
+        region_selection={}, process_selection={},
         weights={},
         nthreads=1
     ):
@@ -23,15 +32,22 @@ class HistMaker:
         Initialize the histogram class.
         """
 
-        self.files = files[proc]
+        logger.info(
+            f"Initializing HistMaker for {proc} in category {cat}"\
+            f" with files {files} and friends {friends}"
+            f" and weights {weights}."
+            f" Using {nthreads} threads."
+        )
+
+        self.files = files
         self.category = cat
         self.process = proc
         self.friends = friends
         self.weights = weights
-        self.base_selection = base_selection
-        self.process_selection = process_selection[cat][proc]
-        self.add_selection = add_selection
+        self.region_selection = region_selection
+        self.process_selection = process_selection
         self.histograms = []
+        self.definitions = definitions
 
         if nthreads > 1:
             ROOT.EnableImplicitMT(nthreads)
@@ -92,14 +108,18 @@ class HistMaker:
             logger.debug(f"Defining {var} with {expr}")
             rdf = rdf.Define(var+'_weight', expr)
 
-        # perform baseselection for the corresponding signal region
-        for sel, expr in self.base_selection.items():
-            rdf = rdf.Filter(expr)
-        
-        # perform process selection for corresponding process
+        for var, expr in self.definitions.items():
+            logger.debug(f"Defining {var} with {expr}")
+            rdf = rdf.Define(var, expr)
+
+        # perform selection for corresponding process
         for filter in self.process_selection:
             logger.debug(f"Filtering {filter}")
             rdf = rdf.Filter(filter)
+
+        # perform selection for corresponding (signal) region
+        for sel, expr in self.region_selection.items():
+            rdf = rdf.Filter(expr)
 
         self.rdf = rdf
 
@@ -111,6 +131,27 @@ class HistMaker:
         return
     
 
+    def add_overflow(self, histo, nbins):
+        """
+        Add overflow to last bin
+        """
+        # get contents and uncertainties
+        content_n = histo.GetBinContent(nbins)
+        content_np1 = histo.GetBinContent(nbins+1)
+
+        error_n = histo.GetBinError(nbins)
+        error_np1 = histo.GetBinError(nbins+1)
+
+        # apply calculation
+        histo.SetBinContent(nbins, content_n + content_np1)
+        histo.SetBinContent(nbins+1, 0)
+
+        histo.SetBinError(nbins, (error_n**2 + error_np1**2)**.5)
+        histo.SetBinError(nbins+1, 0)
+        
+        return histo
+
+
     def make_hists(self, hists):
         """
         Create histograms from the dataframe.
@@ -118,40 +159,45 @@ class HistMaker:
         """
 
         rdf = self.rdf
-
         vars = rdf.GetColumnNames()
-
-        # final selections that are histogram-specific
-        for sel, expr in self.add_selection.items():
-            rdf = rdf.Filter(expr)
+        logger.debug(f"Dataframe of process {self.process} has variables: {vars}")
 
         # create the cpp objects for the histograms
         for var in hists:
             for weight in self.weights:
                 hist = hists[var]
 
-                if weight+'_weight' not in vars or var not in vars:
+                if weight+'_weight' not in vars:
                     logger.warning(
-                        f"Variable {var} or weight {weight}_weight not found"
+                        f"Variable {weight}_weight not found"
                         f" in dataframe for {self.process}"
                     )
                     continue
-
-                self.histograms.append(
-                    rdf.Histo1D(
-                        (
-                            self.process + var + weight,
-                            '',
-                            hist['bins'][0],
-                            hist['bins'][1],
-                            hist['bins'][2]
-                        ),
-                        var,
-                        weight+'_weight'
+                if var not in vars and 'ntuple.'+var not in vars:
+                    logger.warning(
+                        f"Variable {var} not found in dataframe for {self.process}"
                     )
-                )
+                    continue
+
+                histo = rdf.Histo1D(
+                    (
+                        f'{var}_{weight}',
+                        '',
+                        hist['bins'][0],
+                        hist['bins'][1],
+                        hist['bins'][2]
+                    ),
+                    var,
+                    weight+'_weight'
+                ).Clone()
+
+                if hist['overflow']:
+                    logger.info('Adding overflow.')
+                    histo = self.add_overflow(histo, hist['bins'][0])
+
+                self.histograms.append(histo)
         
-        return
+        return        
     
 
     def save_hists(self, outpath, option="RECREATE"):
@@ -174,20 +220,30 @@ class HistMaker:
 if __name__=='__main__':
     # for batch submission or local usage
     args = sys.argv
-    print(args)
-    files = args[1:-2]
-    proc = HistMaker(files, args[-2])
+    options_file = args[1]
+    proc = args[2]
+    
+    # load the options from the json file
+    with open(options_file, 'r') as f:
+        options = json.load(f)
+    logger.info(f"Loaded options from {options_file} for process {proc}")
 
-    histo = {
-        'm_vis': {
-            'xtitle': 'p_{T} (GeV)',
-            'ytitle': 'Events',
-            'bins': [60, 60, 120],
-            'weight': 'genweight'
-        },
-    }
-    proc.make_hists(histo)
+    # create the histogram maker
+    option = options[int(proc)]
+    if len(args) > 3:
+        option['nthreads'] = int(args[3])
 
-    root_file = args[-1]+'.root'
-    print('Saving histograms to', root_file)
-    proc.save_hists(root_file)
+
+    hist = HistMaker(
+        files=option['files'],
+        cat=option['cat'],
+        proc=proc,
+        friends=option['friends'],
+        definitions=option['definitions'],
+        region_selection=option['region_selection'],
+        process_selection=option['process_selection'],
+        weights=option['weights'],
+        nthreads=option['nthreads']
+    )
+    hist.make_hists(option['hists'])
+    hist.save_hists(option['save_path'], 'recreate')

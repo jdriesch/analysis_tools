@@ -9,7 +9,7 @@ ROOT.gStyle.SetOptStat(0)
 ROOT.gStyle.SetPadTickX(1)
 ROOT.gStyle.SetPadTickY(1)
 
-class root_plotter():
+class PlotManager():
     def __init__(self, loadpath, savepath):
 
         self.loadpath = loadpath
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     loadpath = "test.root"
     savepath = "test.pdf"
 
-    plotter = root_plotter(loadpath, savepath)
+    plotter = PlotManager(loadpath, savepath)
     
     # add different processes
     plotter.add_process(
