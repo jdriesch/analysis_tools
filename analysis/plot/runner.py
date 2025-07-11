@@ -77,7 +77,7 @@ def run_plotting(args):
         xrange=[60, 120],
         yrange=[1e2, 1e6],
         ratiorange=[0.9, 1.1],
-        legend_pos=(0.65, 0.65, 0.9, 0.9),
+        legend_pos=(0.75, 0.7, 0.9, 0.9),
         draw_order=['Sim', 'Data'],
         dolog=True,
         label='(CMS Data/Simulation)'

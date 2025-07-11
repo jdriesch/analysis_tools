@@ -12,7 +12,6 @@ ROOT.gStyle.SetPadTickY(1)
 
 class PlotDistro:
     def __init__(self, loadpath, savepath, options):
-        print(options)
         self.loadpath = loadpath
         self.savepath = savepath
         self.options = options
@@ -215,21 +214,29 @@ class PlotDistro:
             stack = self.stacks[group]['stack']
             if self.nratio:
                 yaxis = stack.GetYaxis()
+                yaxis.SetTitle('Events')
                 yaxis.SetTickLength(0.025)
                 yaxis.SetTitleSize(0.08)
                 yaxis.SetTitleOffset(0.75)
                 yaxis.SetLabelSize(0.06)
                 yaxis.SetLabelOffset(0.01)
 
+                yaxis.SetLimits(1, 1e8)
+
                 if 'yrange' in self.options:
                     print(self.options['yrange'])
-                    yaxis.SetRangeUser(self.options['yrange'][0], self.options['yrange'][1])
+                    stack.SetMinimum(1e2)
+                    stack.SetMaximum(1e7)
                 if 'ndiv' in self.options:
                     yaxis.SetNdivisions(self.options['ndiv'])
 
                 xaxis = stack.GetXaxis()
                 xaxis.SetTitleSize(0)
                 xaxis.SetLabelSize(0)
+
+                self.main_pad.Update()
+                self.main_pad.Modified()
+                self.canvas.Update()
 
                 ratio_hist = self.ratio_hists[-1]
                 # xaxis
@@ -268,7 +275,7 @@ class PlotDistro:
         # Create a legend
 
         self.legend = ROOT.TLegend(*self.options['legend_pos'])
-        self.legend.SetTextSize(0.07)
+        self.legend.SetTextSize(0.05)
         self.legend.SetBorderSize(0)
         self.legend.SetFillStyle(0)
         self.legend.SetTextFont(42)
@@ -350,9 +357,13 @@ class PlotDistro:
         # Update the canvas
         self.canvas.Update()
 
+        return
+
 
     def save_canvas(self, savepath, name):
         # Save the canvas
-        self.canvas.SaveAs(f"{savepath}/{name}.pdf")
+        self.canvas.Modified()
+        self.canvas.Update()
         self.canvas.SaveAs(f"{savepath}/{name}.png")
         self.canvas.SaveAs(f"{savepath}/{name}.root")
+        self.canvas.SaveAs(f"{savepath}/{name}.pdf")

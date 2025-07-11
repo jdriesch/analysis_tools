@@ -60,7 +60,9 @@ class PlotManager():
                 print(f"Warning: Process '{proc_name}' not found. Skipping.")
                 continue
             else:
-                self.process_groups[group]['processes'].append(self.processes[proc_name])
+                self.process_groups[group]['processes'].append(
+                    self.processes[proc_name]
+                )
 
         return
 
