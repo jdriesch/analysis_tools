@@ -35,7 +35,7 @@ class PlotManager():
             'markerstyle': markerstyle,
             'markersize': markersize,
             'linewidth': linewidth,
-            'draw_opt': draw_opt,
+            # 'draw_opt': draw_opt,
             'legend_opt': legend_opt,
             'type': hist_type
         }
@@ -71,7 +71,9 @@ class PlotManager():
             xrange=None, yrange=None, ratiorange=None,
             legend_pos=None,
             variations=['Nominal'],
-            draw_order=['Sim', 'Data']
+            draw_order=['Sim', 'Data'],
+            dolog=False,
+            label=True
     ):
         # Add a histogram to the plotter
         if not hasattr(self, 'hists'):
@@ -89,6 +91,8 @@ class PlotManager():
                 'ratiorange': ratiorange,
                 'legend_pos': legend_pos,
                 'draw_order': draw_order,
+                'dolog': dolog,
+                'label': label
             })
 
 
@@ -120,84 +124,3 @@ class PlotManager():
         for i in range(len(self.hists)):
             self.execute_single(i)
 
-
-
-if __name__ == "__main__":
-    # Example usage
-
-    loadpath = "test.root"
-    savepath = "test.pdf"
-
-    plotter = PlotManager(loadpath, savepath)
-    
-    # add different processes
-    plotter.add_process(
-        name='Data',
-        subprocesses=['Data'],
-        linecolor=ROOT.kBlack,
-        markerstyle=20,
-        markersize=1.2,
-        linewidth=3,
-        legend_opt='pex0 same',
-        hist_type='Data'
-    )
-    plotter.add_process(
-        name='DY',
-        subprocesses=['DY'],
-        linecolor=ROOT.kBlack,
-        fillcolor=ROOT.kBlue,
-        linewidth=3,
-    )
-    plotter.add_process(
-        name='EWK',
-        subprocesses=['VV', 'ST', 'DYnonfid', 'DYtau', 'VBF'],
-        linecolor=ROOT.kBlack,
-        fillcolor=ROOT.kGreen-8,
-        linewidth=3,
-    )
-    plotter.add_process(
-        name='TT',
-        subprocesses=['TT'],
-        linecolor=ROOT.kBlack,
-        fillcolor=ROOT.kMagenta+3,
-        linewidth=3,
-    )
-
-    # group processes
-    plotter.group_processes(
-        group='Data',
-        processes=['Data'],
-        draw_opt='pex0 ex0 same'
-    )
-    plotter.group_processes(
-        group='Sim',
-        processes=['DY', 'EWK', 'TT'],
-        draw_opt='HIST same',
-    )
-
-    # Load the histograms
-    plotter.add_histogram(
-        name='m_vis',
-        variations=['Nominal'],
-        xtitle='m_{vis} (GeV)',
-        ytitle='Events',
-        xrange=[60, 120],
-        yrange=[0, 1e6],
-        ratio=[0.9, 1.1],
-        legend_pos=(0.65, 0.5, 0.9, 0.9)
-    )
-
-
-
-    plotter.load_results()
-
-    # Plot the histograms
-    plotter.plot_results()
-
-    plotter.plot_ratio()
-
-    # Add the label
-    plotter.plot_label()
-
-    # Save the canvas
-    plotter.draw_all()

@@ -38,7 +38,7 @@ def run_plotting(args):
         name='DY',
         subprocesses=['DY'],
         linecolor=ROOT.kBlack,
-        fillcolor=ROOT.kBlue,
+        fillcolor=ROOT.kAzure+1,
         linewidth=3,
     )
     plotter.add_process(
@@ -64,7 +64,7 @@ def run_plotting(args):
     )
     plotter.group_processes(
         group='Sim',
-        processes=['DY', 'EWK', 'TT'],
+        processes=['TT', 'EWK', 'DY'],
         draw_opt='HIST',
     )
 
@@ -75,10 +75,12 @@ def run_plotting(args):
         xtitle='m_{vis} (GeV)',
         ytitle='Events',
         xrange=[60, 120],
-        yrange=[0, 1e6],
+        yrange=[1e2, 1e6],
         ratiorange=[0.9, 1.1],
-        legend_pos=(0.65, 0.5, 0.9, 0.9),
-        draw_order=['Sim', 'Data']
+        legend_pos=(0.65, 0.65, 0.9, 0.9),
+        draw_order=['Sim', 'Data'],
+        dolog=True,
+        label='(CMS Data/Simulation)'
     )
 
     plotter.construct_all_hists()

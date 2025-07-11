@@ -1,4 +1,8 @@
 import ROOT
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptStat(0)
@@ -8,6 +12,7 @@ ROOT.gStyle.SetPadTickY(1)
 
 class PlotDistro:
     def __init__(self, loadpath, savepath, options):
+        print(options)
         self.loadpath = loadpath
         self.savepath = savepath
         self.options = options
@@ -70,7 +75,7 @@ class PlotDistro:
         self.stack_collection.append(stack)
 
         return stack
-    
+
 
     def load_hists(self):
         self.stacks = {}
@@ -128,6 +133,8 @@ class PlotDistro:
 
 
     def setup_ratio(self, num, den):
+        self.ratio_pad.cd()
+
         hist_num = self.stacks[num]['stack'].GetStack().Last().Clone(num + "_ratio")
         hist_den = self.stacks[den]['stack'].GetStack().Last().Clone(den + "_ratio")
 
@@ -167,15 +174,47 @@ class PlotDistro:
             self.canvas.cd()
 
 
+    def plot_results(self):
+        """
+        plot results into the main pad
+        """
+
+        self.main_pad.cd()
+
+        # respect draw order if provided
+        if 'draw_order' in self.options:
+
+            for group in self.options['draw_order']:
+
+                if group not in self.stacks:
+                    logger.warning(f"Group '{group}' not found in stacks.")
+                    continue
+
+                # Draw the stack for the group
+                self.stacks[group]['stack'].Draw(
+                    self.stacks[group]['draw_opt']
+                )
+
+        else:
+            for group in self.stacks:
+                self.stacks[group]['stack'].Draw(
+                    self.stacks[group]['draw_opt']
+                )
+
+        self.canvas.Modified()
+        self.canvas.Update()
+
+        return
+
+
     def improve_visualization(self):
-        # get the histogram responsible for the axes
-        # hist = self.stacks[-1]
-        # self.main_pad.cd()
-        print(self.main_pad.GetListOfPrimitives())
+
+        self.main_pad.SetLogy(self.options['dolog'])
+
         for group in self.stacks:
             stack = self.stacks[group]['stack']
             if self.nratio:
-                yaxis = self.stacks[group]['stack'].GetYaxis()
+                yaxis = stack.GetYaxis()
                 yaxis.SetTickLength(0.025)
                 yaxis.SetTitleSize(0.08)
                 yaxis.SetTitleOffset(0.75)
@@ -183,11 +222,12 @@ class PlotDistro:
                 yaxis.SetLabelOffset(0.01)
 
                 if 'yrange' in self.options:
+                    print(self.options['yrange'])
                     yaxis.SetRangeUser(self.options['yrange'][0], self.options['yrange'][1])
                 if 'ndiv' in self.options:
                     yaxis.SetNdivisions(self.options['ndiv'])
 
-                xaxis = self.stacks[group]['stack'].GetXaxis()
+                xaxis = stack.GetXaxis()
                 xaxis.SetTitleSize(0)
                 xaxis.SetLabelSize(0)
 
@@ -215,96 +255,13 @@ class PlotDistro:
                 ryaxis.SetNdivisions(503)
 
             else:
-                # xaxis
-                xaxis = stack.GetXaxis()
-                xaxis.SetTitle(self.options['xtitle'])
-                xaxis.SetTitleSize(0.06)
-                xaxis.SetTitleOffset(0.9)
-                xaxis.SetLabelSize(0.06)
-                xaxis.SetLabelOffset(0.01)
-                xaxis.SetTickLength(0.03)
-
-                # yaxis
-                yaxis = stack.GetYaxis()
-                yaxis.SetTitle(self.options['ytitle'])
-                yaxis.SetTitleSize(0.06)
-                yaxis.SetTitleOffset(0.75)
-                yaxis.SetLabelSize(0.06)
-                yaxis.SetLabelOffset(0.01)
-                yaxis.SetTickLength(0.03)
-                yaxis.SetRangeUser(self.options['yrange'][0], self.options['yrange'][1])
-
+                # not implemented yet
+                NotImplementedError("Ratio plots are not implemented for non-ratio mode.")
         
         self.canvas.Modified()
         self.canvas.Update()
 
-    
-    def plot_label(self):
-        # get position
-        pad = self.main_pad if self.nratio else self.canvas.GetPad(0)
-        x = pad.GetLeftMargin()
-        y = pad.GetTopMargin()
-
-        cmsTex = ROOT.TLatex()
-        cmsTex.SetNDC()
-        cmsTex.SetTextFont(42)
-        cmsTex.SetTextSize(0.07)
-        cmsTex.SetTextAlign(11)
-        cmsTex.DrawLatex(x, 1-y + 0.015, '#bf{Private Work}')
-        cmsTex.DrawLatex(x+0.23, 1-y + 0.015, '#it{'+self.label+'}')
-
-
-    def plot_results(self):
-
-        print(self.stacks)
-        if 'draw_order' in self.options:
-            # Draw the stacks in the order specified in the options
-            for group in self.options['draw_order']:
-                if group in self.stacks:
-                    stack = self.stacks[group]['stack']
-                    stack.Draw(self.stacks[group]['draw_opt'])
-
-                    # self.drawn_objects.append(stack)
-                else:
-                    print(f"Warning: Group '{group}' not found in stacks.")
-
-        else:
-            for group in self.stacks:
-                self.stacks[group]['stack'].Draw(self.stacks[group]['draw_opt'])
-
-        self.canvas.Modified()
-        self.canvas.Update()
-
-
-    def plot_ratio(self):
-        # Create a ratio histogram
-        self.ratio_pad.cd()
-
-        draw_options = []
-
-        for i, hist in enumerate(self.stacks[:self.nratio]):
-            ratio_hist = hist.Clone(hist.GetName() + "_ratio")
-            ratio_hist.Divide(self.stacks[1])
-            
-            for n in range(1, ratio_hist.GetNbinsX() + 1):
-                if self.stacks[1].GetBinContent(n) == 0:
-                    if hist.GetBinContent(n) == 0:
-                        ratio_hist.SetBinContent(n, 1)
-                    else:
-                        ratio_hist.SetBinContent(n, 100)
-
-            self.ratio_hists.append(ratio_hist)
-            draw_options.append(self.options['draw_opt'][i])
-
-
-        # Draw the ratio histogram
-        for i, draw_option in reversed(list(enumerate(draw_options))):
-            self.ratio_hists[i].Draw(draw_option)
-
-        self.canvas.Modified()
-        self.canvas.Update()
-        # self.ratio_pad.Update()
-        self.main_pad.cd()
+        return
 
     
     def plot_legend(self):
@@ -317,14 +274,38 @@ class PlotDistro:
         self.legend.SetTextFont(42)
 
         for i, hist in enumerate(self.stacks):
-            if self.options['legend_opt'][i]:
-                self.legend.AddEntry(hist, self.options['legend'][i], self.options['legend_opt'][i])
-            else:
-                self.legend.AddEntry(hist, self.options['legend'][i])
+            stack = self.stacks[hist]['stack']
+
+            hists = stack.GetHists()
+
+            for h in hists:
+                if 'legend_opt' in self.options:
+                    self.legend.AddEntry(h, h.GetName(), self.options['legend_opt'][i])
+                else:
+                    self.legend.AddEntry(h, h.GetName())
 
         self.legend.Draw('same')
 
     
+    def plot_label(self):
+        # get position
+        pad = self.main_pad if self.nratio else self.canvas.GetPad(0)
+        pad_ylow = pad.GetYlowNDC()
+        x = pad.GetLeftMargin()
+        y = 1 - pad.GetTopMargin()*(1-pad_ylow) + 0.01
+
+        # Draw CMS label
+        cmsTex = ROOT.TLatex()
+        cmsTex.SetNDC()
+        cmsTex.SetTextFont(42)
+        cmsTex.SetTextSize(0.05)
+        cmsTex.SetTextAlign(11)
+        cmsTex.DrawLatex(x, y, '#bf{Private Work}')
+        cmsTex.DrawLatex(x+0.25, y, f'#it{{{self.label}}}')
+
+        return
+
+
     def plot_textbox(self, textbox):
         self.textbox = ROOT.TLatex()
         self.textbox.SetNDC()
@@ -343,24 +324,18 @@ class PlotDistro:
         self.canvas = ROOT.TCanvas("canvas", "canvas", w, h)
 
         self.setup_pad()
-        print("Canvas created with size:", w, "x", h)
-
         self.plot_results()
-        print("Results plotted.")
 
-        self.ratio_pad.cd()
         self.setup_ratio('Data', 'Sim') # TODO: hard coded
-        print("Ratio pad set up.")
 
         self.canvas.cd()
         self.canvas.Update()
 
         # Improve visualization
         self.improve_visualization()
-        print("Visualization improved.")
 
         # Plot legend
-        if 'legend' in self.options:
+        if 'legend_pos' in self.options:
             self.plot_legend()
 
         # Plot label
@@ -381,37 +356,3 @@ class PlotDistro:
         self.canvas.SaveAs(f"{savepath}/{name}.pdf")
         self.canvas.SaveAs(f"{savepath}/{name}.png")
         self.canvas.SaveAs(f"{savepath}/{name}.root")
-
-
-
-if __name__ == "__main__":
-    # Example usage
-    loadpath = "test.root"
-    savepath = "test"
-
-    options = {
-        'process_groups': {
-            'Data': {
-                'categories': [
-                    {'process': 'Data', 'subprocesses': ['Data'], 'options': {'markerstyle': 20}}
-                ],
-                'draw_opt': 'e1p x0 same'
-            },
-            'Sim': {
-                'categories': [
-                    {'process': 'EWK', 'subprocesses': ['ST', 'VV', 'DYnonfid', 'DYtau', 'VBF'], 'options': {'fillcolor': ROOT.kGreen-8}},
-                    {'process': 'TT', 'subprocesses': ['TT'], 'options': {'fillcolor': ROOT.kMagenta+3}},
-                    {'process': 'DY', 'subprocesses': ['DY'], 'options': {'fillcolor': ROOT.kAzure+1}},
-                ],
-                'draw_opt': 'hist'
-            }
-        },  
-        'name': 'm_vis_corrNominal',
-        'xtitle': 'm_{vis} (GeV)',
-        'ratiorange': [0.9, 1.1],
-        'draw_order': ['Sim', 'Data']
-    }
-
-    plotter = PlotDistro(loadpath, savepath, options)
-    plotter.draw_canvas()
-    plotter.save_canvas(savepath, "plot_distro")
