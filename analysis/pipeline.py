@@ -18,4 +18,8 @@ def run_pipeline(args):
         from fit import collect_histograms, make_datacard
         collect_histograms(args.version)
         make_datacard()
+
+    if args.plot:
+        from plot import run_plotting
+        run_plotting(args)
     

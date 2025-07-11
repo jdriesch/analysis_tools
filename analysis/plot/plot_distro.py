@@ -14,6 +14,7 @@ class PlotDistro:
         self.hists = []
         self.ratio_hists = []
         self.drawn_objects = []
+        self.stack_collection = []
 
         self.nratio = True # hard-coded for now
 
@@ -25,85 +26,93 @@ class PlotDistro:
         Add subprocesses, e.g. 'EWK' consisting of ST, VV,...
         """
         # Load subprocesses from the options
+        process = proc['process']
         subprocesses = proc['subprocesses']
-        name = proc['process']
-        options = proc['options']
+
+        hist = False
 
         for i, subprocess in enumerate(subprocesses):
-            if i==0:
-                hist = self.tf.Get(subprocess + self.options['name']).Clone(name)
-                hist.SetDirectory(0)
+            rfile = f'{self.loadpath}/{subprocess}_{process}.root'
+            tfile = ROOT.TFile.Open(rfile)
+
+            h = tfile.Get(self.options['name']).Clone(process)
+            h.SetDirectory(ROOT.nullptr)
+
+            if not hist:
+                hist = h
             else:
-                hist_toadd = self.tf.Get(subprocess + self.options['name']).Clone(name)
-                hist_toadd.SetDirectory(0)
-                hist.Add(hist_toadd)
+                hist.Add(h)
+
+            tfile.Close()
 
         # Set histogram properties
-        hist = self.set_properties(hist, options)
+        hist = self.set_properties(hist, proc)
 
         return hist
 
 
     def construct_group(self, group):
         """
-        Construct the groups of processes, e.g. 'Data', 'Sim'
+        Construct the groups of processes: 'Data', 'Sim'
         """
         stack = ROOT.THStack(group, '')
 
-        for proc in self.options['process_groups'][group]['categories']:
-            hist = self.get_process(proc)
-            # print(hist.GetName(), hist.GetEntries(), hist.GetFillColor())
+        processes = self.options['process_groups'][group]['processes']
 
+        for proc in processes:
+
+            # Get the sum of histograms of the subprocesses (EWK = ST + VV + ...)
+            hist = self.get_process(proc)
             self.hists.append(hist)
             stack.Add(hist)
+
+        # avoid garbage collection
+        self.stack_collection.append(stack)
 
         return stack
     
 
     def load_hists(self):
-        # Load the ROOT file
-        self.tf = ROOT.TFile(self.loadpath, 'read')
-
         self.stacks = {}
 
         for group in self.options['process_groups']:
-            # Construct the group of processes
+            # Construct the group of processes (Data / Sim)
             self.stacks[group] = {
                 'stack': self.construct_group(group),
                 'draw_opt': self.options['process_groups'][group]['draw_opt'],
             }
 
-        self.tf.Close()
+        return
 
 
     def set_properties(self, hist, options):
         # Set the histogram properties
 
-        if 'linecolor' in options:
+        if 'linecolor' in options and options['linecolor'] is not None:
             hist.SetLineColor(options['linecolor'])
 
-        if 'linestyle' in options:
+        if 'linestyle' in options and options['linestyle'] is not None:
             hist.SetLineStyle(options['linestyle'])
 
-        if 'fillcolor' in options:
+        if 'fillcolor' in options and options['fillcolor'] is not None:
             hist.SetFillColor(options['fillcolor'])
 
-        if 'fillstyle' in options:
+        if 'fillstyle' in options and options['fillstyle'] is not None:
             hist.SetFillStyle(options['fillstyle'])
 
-        if 'markerstyle' in options:
+        if 'markerstyle' in options and options['markerstyle'] is not None:
             hist.SetMarkerStyle(options['markerstyle'])
 
-        if 'markersize' in options:
+        if 'markersize' in options and options['markersize'] is not None:
             hist.SetMarkerSize(options['markersize'])
 
-        if 'linewidths' in options:
+        if 'linewidths' in options and options['linewidths'] is not None:
             hist.SetLineWidth(options['linewidths'])
 
-        if 'xtitle' in options:
+        if 'xtitle' in options and options['xtitle'] is not None:
             hist.GetXaxis().SetTitle(options['xtitle'])
 
-        if 'ytitle' in options:
+        if 'ytitle' in options and options['ytitle'] is not None:
             hist.GetYaxis().SetTitle(options['ytitle'])
  
         hist.SetTitle('')
@@ -128,6 +137,10 @@ class PlotDistro:
 
         self.ratio_hists.append(hist_num)
 
+        self.canvas.Modified()
+        self.canvas.Update()
+
+        return
 
     def setup_pad(self):
         # Create a main pad and a ratio pad
@@ -157,11 +170,12 @@ class PlotDistro:
     def improve_visualization(self):
         # get the histogram responsible for the axes
         # hist = self.stacks[-1]
+        # self.main_pad.cd()
+        print(self.main_pad.GetListOfPrimitives())
         for group in self.stacks:
             stack = self.stacks[group]['stack']
-            print(self.stacks)
             if self.nratio:
-                yaxis = stack.GetYaxis()
+                yaxis = self.stacks[group]['stack'].GetYaxis()
                 yaxis.SetTickLength(0.025)
                 yaxis.SetTitleSize(0.08)
                 yaxis.SetTitleOffset(0.75)
@@ -173,8 +187,9 @@ class PlotDistro:
                 if 'ndiv' in self.options:
                     yaxis.SetNdivisions(self.options['ndiv'])
 
-                stack.GetXaxis().SetTitleSize(0)
-                stack.GetXaxis().SetLabelSize(0)
+                xaxis = self.stacks[group]['stack'].GetXaxis()
+                xaxis.SetTitleSize(0)
+                xaxis.SetLabelSize(0)
 
                 ratio_hist = self.ratio_hists[-1]
                 # xaxis
@@ -240,6 +255,8 @@ class PlotDistro:
 
 
     def plot_results(self):
+
+        print(self.stacks)
         if 'draw_order' in self.options:
             # Draw the stacks in the order specified in the options
             for group in self.options['draw_order']:
@@ -247,19 +264,16 @@ class PlotDistro:
                     stack = self.stacks[group]['stack']
                     stack.Draw(self.stacks[group]['draw_opt'])
 
-                    self.drawn_objects.append(stack)
+                    # self.drawn_objects.append(stack)
                 else:
                     print(f"Warning: Group '{group}' not found in stacks.")
 
         else:
             for group in self.stacks:
-                # Draw the histograms in the main pad
                 self.stacks[group]['stack'].Draw(self.stacks[group]['draw_opt'])
-                # print(self.stacks[group]['stack'].GetMaximum())
-
 
         self.canvas.Modified()
-        # self.canvas.Update()
+        self.canvas.Update()
 
 
     def plot_ratio(self):
@@ -329,14 +343,21 @@ class PlotDistro:
         self.canvas = ROOT.TCanvas("canvas", "canvas", w, h)
 
         self.setup_pad()
+        print("Canvas created with size:", w, "x", h)
 
         self.plot_results()
+        print("Results plotted.")
 
         self.ratio_pad.cd()
         self.setup_ratio('Data', 'Sim') # TODO: hard coded
+        print("Ratio pad set up.")
+
+        self.canvas.cd()
+        self.canvas.Update()
 
         # Improve visualization
         self.improve_visualization()
+        print("Visualization improved.")
 
         # Plot legend
         if 'legend' in self.options:

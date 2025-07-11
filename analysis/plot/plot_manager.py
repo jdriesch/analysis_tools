@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import ROOT
 
-from src.plot_distro import PlotDistro
+from .plot_distro import PlotDistro
 
 ROOT.gROOT.SetBatch(True)
 ROOT.gStyle.SetOptStat(0)
@@ -41,14 +41,17 @@ class PlotManager():
         }
 
 
-    def group_processes(self, group, processes):
+    def group_processes(self, group, processes, draw_opt):
         # Aggregate processes based on histogram type, e.g., 'Data', 'Sim'
         
         if not hasattr(self, 'process_groups'):
             self.process_groups = {}
 
         if group not in self.process_groups:
-            self.process_groups[group] = []
+            self.process_groups[group] = {
+                'processes': [],
+                'draw_opt': draw_opt
+            }
         else:
             print(f"Warning: Group '{group}' already exists. Overwriting.")
 
@@ -57,7 +60,9 @@ class PlotManager():
                 print(f"Warning: Process '{proc_name}' not found. Skipping.")
                 continue
             else:
-                self.process_groups[group].append(self.processes[proc_name])
+                self.process_groups[group]['processes'].append(self.processes[proc_name])
+
+        return
 
 
     def add_histogram(
@@ -66,6 +71,7 @@ class PlotManager():
             xrange=None, yrange=None, ratiorange=None,
             legend_pos=None,
             variations=['Nominal'],
+            draw_order=['Sim', 'Data']
     ):
         # Add a histogram to the plotter
         if not hasattr(self, 'hists'):
@@ -81,7 +87,8 @@ class PlotManager():
                 'xrange': xrange,
                 'yrange': yrange,
                 'ratiorange': ratiorange,
-                'legend_pos': legend_pos
+                'legend_pos': legend_pos,
+                'draw_order': draw_order,
             })
 
 
@@ -89,8 +96,8 @@ class PlotManager():
 
         # Construct all histograms
         for hist in self.hists:
-
             hist['process_groups'] = self.process_groups
+
 
     
     def execute_single(self, index):
@@ -98,13 +105,10 @@ class PlotManager():
         single_plotter = PlotDistro(
             loadpath=self.loadpath,
             savepath=self.savepath,
-            hists=self.hists[index]
+            options=self.hists[index]
         )
 
         single_plotter.load_hists()
-        single_plotter.plot_hists()
-        single_plotter.plot_ratio()
-        single_plotter.plot_label()
         single_plotter.draw_canvas()
 
         # Save the canvas
