@@ -143,6 +143,18 @@ class PlotDistro:
 
         self.ratio_hists.append(hist_num)
 
+        # draw line
+        line = ROOT.TLine(
+            self.options['xrange'][0], 1, 
+            self.options['xrange'][1], 1
+        )
+        line.SetLineColor(ROOT.kBlack)
+        line.Draw("same")
+        print(line)
+
+        self.ratio_pad.Modified()
+        self.ratio_pad.Update()
+
         self.canvas.Modified()
         self.canvas.Update()
 
@@ -221,12 +233,9 @@ class PlotDistro:
                 yaxis.SetLabelSize(0.06)
                 yaxis.SetLabelOffset(0.01)
 
-                yaxis.SetLimits(1, 1e8)
-
                 if 'yrange' in self.options:
-                    print(self.options['yrange'])
-                    stack.SetMinimum(1e2)
-                    stack.SetMaximum(1e7)
+                    stack.SetMinimum(self.options['yrange'][0])
+                    stack.SetMaximum(self.options['yrange'][1])
                 if 'ndiv' in self.options:
                     yaxis.SetNdivisions(self.options['ndiv'])
 

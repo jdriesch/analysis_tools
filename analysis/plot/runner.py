@@ -45,14 +45,14 @@ def run_plotting(args):
         name='EWK',
         subprocesses=['VV', 'ST', 'DYnonfid', 'DYtau', 'VBF'],
         linecolor=ROOT.kBlack,
-        fillcolor=ROOT.kGreen-8,
+        fillcolor=ROOT.kGreen-9,
         linewidth=3,
     )
     plotter.add_process(
         name='TT',
         subprocesses=['TT'],
         linecolor=ROOT.kBlack,
-        fillcolor=ROOT.kMagenta+3,
+        fillcolor=ROOT.kMagenta-8,
         linewidth=3,
     )
 
@@ -70,13 +70,13 @@ def run_plotting(args):
 
     # Load the histograms
     plotter.add_histogram(
-        name='m_vis_corr',
+        name='pfmet_corr',
         variations=['_Nominal'],
-        xtitle='m_{vis} (GeV)',
+        xtitle='missing pt (GeV)',
         ytitle='Events',
         xrange=[60, 120],
         yrange=[1e2, 1e6],
-        ratiorange=[0.9, 1.1],
+        ratiorange=[0.7, 1.3],
         legend_pos=(0.75, 0.7, 0.9, 0.9),
         draw_order=['Sim', 'Data'],
         dolog=True,
